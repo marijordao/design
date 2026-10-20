@@ -1,0 +1,307 @@
+<title>Fluxo do Drop-in</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700;800&family=Sofia+Sans+Semi+Condensed:wght@700;800&display=swap">
+<style>
+/* Layout: coluna única de leitura, estados como fichas de recepção, passos numerados porque são uma sequência real */
+:root {
+  --creme: #FAF3E1;
+  --papel: #FFFBF1;
+  --tinta: #2A2219;
+  --tinta-suave: #6B5C48;
+  --linha: #E6D8B8;
+  --ouro: #F5BA63;
+  --ouro-escuro: #C3904E;
+  --ouro-texto: #8A6330;
+  --cross: #E4437D;
+  --cross-fundo: #FCE3EC;
+  --hyrox-fundo: #FDEBCB;
+  --ok: #2F7A4F;
+  --ok-fundo: #DDEFE3;
+  --alerta: #A85A12;
+  --alerta-fundo: #FBE6CF;
+  --neutro-fundo: #EFE6D2;
+  --display: "Sofia Sans Semi Condensed", "Sofia Sans", system-ui, sans-serif;
+  --corpo: "Sofia Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --creme: #1F1A14; --papel: #2A231B; --tinta: #F6EBD3; --tinta-suave: #C2B192; --linha: #43382A;
+    --ouro: #F5BA63; --ouro-escuro: #D9A764; --ouro-texto: #F5BA63;
+    --cross: #F0679A; --cross-fundo: #4A2030; --hyrox-fundo: #4A3818;
+    --ok: #7CCB9A; --ok-fundo: #1E3A2A; --alerta: #F2B272; --alerta-fundo: #46301A; --neutro-fundo: #352C21;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --creme: #1F1A14; --papel: #2A231B; --tinta: #F6EBD3; --tinta-suave: #C2B192; --linha: #43382A;
+  --ouro: #F5BA63; --ouro-escuro: #D9A764; --ouro-texto: #F5BA63;
+  --cross: #F0679A; --cross-fundo: #4A2030; --hyrox-fundo: #4A3818;
+  --ok: #7CCB9A; --ok-fundo: #1E3A2A; --alerta: #F2B272; --alerta-fundo: #46301A; --neutro-fundo: #352C21;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; font-style: normal; }
+body {
+  background: var(--creme); color: var(--tinta);
+  font-family: var(--corpo); font-size: 17px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+main { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(34px, 7vw, 52px); font-weight: 800; }
+h2 { font-size: 28px; font-weight: 800; }
+h3 { font-size: 20px; font-weight: 700; }
+p { margin: 0; max-width: 65ch; }
+em, i { font-style: normal; }
+.rotulo { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ouro-texto); }
+section { display: flex; flex-direction: column; gap: 16px; }
+.sub { color: var(--tinta-suave); }
+
+header { display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px; border-bottom: 3px solid var(--ouro); }
+.regra { background: var(--papel); border: 1px solid var(--linha); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+.regra strong { font-weight: 800; }
+
+/* Grade das aulas */
+.aulas { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.aula { border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; background: var(--hyrox-fundo); }
+.aula.cross { background: var(--cross-fundo); }
+.aula .dia { font-size: 13px; font-weight: 700; color: var(--tinta-suave); }
+.aula .hora { font-family: var(--display); font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.aula .mod { font-weight: 800; color: var(--ouro-texto); }
+.aula.cross .mod { color: var(--cross); }
+.precos { display: flex; flex-wrap: wrap; gap: 8px 20px; font-variant-numeric: tabular-nums; }
+.precos span b { font-weight: 800; }
+
+/* Estados */
+.chip { display: inline-block; font-weight: 800; font-size: 14px; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.pre { background: var(--alerta-fundo); color: var(--alerta); }
+.conf { background: var(--ok-fundo); color: var(--ok); }
+.esp { background: var(--hyrox-fundo); color: var(--ouro-texto); }
+.canc { background: var(--neutro-fundo); color: var(--tinta-suave); }
+.evo { background: var(--ouro); color: #2A2219; }
+
+.mapa { overflow-x: auto; background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; padding: 20px; }
+.mapa svg { display: block; min-width: 640px; width: 100%; height: auto; }
+.mapa text { font-family: var(--corpo); }
+
+/* Passos */
+ol.passos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; counter-reset: p; }
+ol.passos > li { counter-increment: p; display: grid; grid-template-columns: 44px 1fr; gap: 14px; background: var(--papel); border: 1px solid var(--linha); border-radius: 12px; padding: 18px; }
+ol.passos > li::before { content: counter(p); font-family: var(--display); font-weight: 800; font-size: 22px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--creme); border: 2px solid var(--ouro-escuro); color: var(--ouro-texto); }
+ol.passos > li.grava { border: 2px solid var(--ouro-escuro); }
+ol.passos > li.grava::before { background: var(--ouro); color: #2A2219; border-color: var(--ouro); }
+.passo { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.passo-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.passo ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.tela { background: var(--creme); border: 1px dashed var(--ouro-escuro); border-radius: 10px; padding: 14px 16px; font-size: 16px; display: flex; flex-direction: column; gap: 6px; }
+.tela .botao { align-self: flex-start; margin-top: 6px; background: var(--ouro); color: #2A2219; font-weight: 800; padding: 8px 14px; border-radius: 8px; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .86em; background: var(--neutro-fundo); padding: 1px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+
+/* Tabela */
+.tabela { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 16px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+th { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-suave); }
+
+.decidir { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.decidir li { background: var(--papel); border-left: 4px solid var(--cross); border-radius: 6px; padding: 12px 16px; }
+.decidir b { font-weight: 800; }
+footer { color: var(--tinta-suave); font-size: 14px; border-top: 1px solid var(--linha); padding-top: 16px; }
+</style>
+
+<main>
+  <header>
+    <span class="rotulo">Recepção Crown Clube Fla · proposta</span>
+    <h1>Fluxo das aulas avulsas com a EVO</h1>
+    <p class="sub">Como uma reserva de drop-in anda no nosso sistema, do primeiro pedido até a aula, e em que momento a EVO é avisada.</p>
+    <div class="regra">
+      <strong>A regra principal</strong>
+      <p>O nosso sistema cuida do atendimento: pré-reserva, lista de espera, Pix e pacotes. A EVO só recebe quem foi <b>Confirmado</b> por um atendente, sempre com um clique de confirmação.</p>
+    </div>
+  </header>
+
+  <section>
+    <span class="rotulo">Grade do fim de semana</span>
+    <div class="aulas">
+      <div class="aula cross"><span class="dia">Sábado</span><span class="hora">08h</span><span class="mod">Cross</span></div>
+      <div class="aula"><span class="dia">Sábado</span><span class="hora">09h</span><span class="mod">HYROX</span></div>
+      <div class="aula cross"><span class="dia">Sábado</span><span class="hora">10h</span><span class="mod">Cross</span></div>
+      <div class="aula"><span class="dia">Domingo</span><span class="hora">09h</span><span class="mod">HYROX</span></div>
+      <div class="aula cross"><span class="dia">Domingo</span><span class="hora">10h</span><span class="mod">Cross</span></div>
+    </div>
+    <div class="precos sub">
+      <span>Avulsa <b>R$ 80</b></span>
+      <span>5 aulas <b>R$ 350</b></span>
+      <span>10 aulas <b>R$ 600</b></span>
+      <span>Pacotes valem <b>30 dias</b></span>
+      <span>Até <b>15 externos</b> por aula (configurável)</span>
+    </div>
+    <p class="sub">Cross avulsa só para quem já treina Cross. HYROX é aberta a qualquer nível. Não há aula experimental no fim de semana.</p>
+  </section>
+
+  <section>
+    <h2>Mapa dos status</h2>
+    <div class="mapa" role="img" aria-label="Pedido vira Pré-reserva se houver vaga ou Lista de espera se não houver. Pré-reserva vira Confirmado quando o Pix é conferido, e então o aluno é inscrito na EVO. Pré-reserva que vence vira Cancelado. Confirmado pode ser cancelado, gerando uma pendência para remover na EVO. Quando uma vaga é liberada, o primeiro da Lista de espera vira Pré-reserva.">
+      <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--ouro-escuro)"/>
+          </marker>
+        </defs>
+        <g stroke="var(--ouro-escuro)" stroke-width="2" fill="none" marker-end="url(#seta)">
+          <path d="M98,80 L148,80"/>
+          <path d="M290,80 L398,80"/>
+          <path d="M520,80 L570,80"/>
+          <path d="M60,100 L60,212 L148,212"/>
+          <path d="M220,98 L220,192"/>
+          <path d="M290,212 L398,212" stroke-dasharray="5 4"/>
+          <path d="M460,98 L460,192"/>
+          <path d="M398,232 L330,262 L230,262 L220,232"/>
+        </g>
+        <g font-size="12" fill="var(--tinta-suave)">
+          <text x="300" y="70">Pix conferido +</text>
+          <text x="300" y="104">atendente confirma</text>
+          <text x="66" y="160">sem vaga</text>
+          <text x="226" y="150">prazo venceu</text>
+          <text x="466" y="150">cancelar</text>
+          <text x="236" y="286">vaga liberada: 1º da fila vira pré-reserva</text>
+        </g>
+        <g font-weight="800" font-size="15">
+          <rect x="18" y="62" width="80" height="36" rx="18" fill="var(--papel)" stroke="var(--linha)"/>
+          <text x="58" y="85" text-anchor="middle" fill="var(--tinta)">Pedido</text>
+          <rect x="150" y="62" width="140" height="36" rx="18" fill="var(--alerta-fundo)"/>
+          <text x="220" y="85" text-anchor="middle" fill="var(--alerta)">Pré-reserva</text>
+          <rect x="400" y="62" width="120" height="36" rx="18" fill="var(--ok-fundo)"/>
+          <text x="460" y="85" text-anchor="middle" fill="var(--ok)">Confirmado</text>
+          <rect x="572" y="62" width="130" height="36" rx="18" fill="var(--ouro)"/>
+          <text x="637" y="85" text-anchor="middle" fill="#2A2219">Inscrito na EVO</text>
+          <rect x="150" y="194" width="140" height="36" rx="18" fill="var(--hyrox-fundo)"/>
+          <text x="220" y="217" text-anchor="middle" fill="var(--ouro-texto)">Lista de espera</text>
+          <rect x="400" y="194" width="120" height="36" rx="18" fill="var(--neutro-fundo)"/>
+          <text x="460" y="217" text-anchor="middle" fill="var(--tinta-suave)">Cancelado</text>
+        </g>
+        <text x="530" y="217" font-size="12" fill="var(--tinta-suave)">+ pendência “remover na EVO”</text>
+      </svg>
+    </div>
+    <p class="sub">Uma pré-reserva vencida vira <span class="chip canc">Cancelado</span> com o motivo “expirou”, para manter só os quatro status.</p>
+  </section>
+
+  <section>
+    <h2>Passo a passo</h2>
+    <p class="sub">O passo com borda dourada é o único que grava na EVO.</p>
+    <ol class="passos">
+      <li>
+        <div class="passo">
+          <div class="passo-topo"><h3>Configuração, uma vez só</h3><span class="chip canc">só leitura na EVO</span></div>
+          <ul>
+            <li>A gestora abre Configurações e o sistema lista as aulas da semana que já existem na agenda da EVO.</li>
+            <li>Ela liga cada uma das 5 aulas do fim de semana à aula correspondente da EVO.</li>
+            <li>Ali também ficam o limite de externos por aula (padrão 15), o prazo da pré-reserva e o modo simulação, que vem ligado.</li>
+          </ul>
+        </div>
+      </li>
+      <li>
+        <div class="passo">
+          <div class="passo-topo"><h3>Nova reserva</h3><span class="chip pre">Pré-reserva</span><span class="chip esp">Lista de espera</span></div>
+          <ul>
+            <li>O atendente busca o aluno por celular ou CPF. Se não achar, o sistema procura na EVO só para não cadastrar a mesma pessoa duas vezes.</li>
+            <li>Na Cross, a pergunta “Já treina Cross?” é obrigatória. Se a resposta for não, o sistema bloqueia e sugere a HYROX.</li>
+            <li>Com vaga, vira Pré-reserva com prazo. Sem vaga, entra na Lista de espera.</li>
+            <li>O sistema gera a mensagem pronta para o WhatsApp, com valor, chave Pix e prazo. Se o aluno tem pacote com saldo, a mensagem avisa que a aula sai do pacote.</li>
+          </ul>
+        </div>
+      </li>
+      <li class="grava">
+        <div class="passo">
+          <div class="passo-topo"><h3>Confirmação</h3><span class="chip conf">Confirmado</span><span class="chip evo">grava na EVO</span></div>
+          <ul>
+            <li>O comprovante chega. O atendente clica em <b>Conferir pagamento</b>, anexa o comprovante e confere o valor, ou usa 1 crédito do pacote.</li>
+            <li>O sistema relê a aula na EVO para garantir que a vaga ainda existe.</li>
+            <li>Aparece a tela de confirmação, que mostra exatamente o que será feito:</li>
+          </ul>
+          <div class="tela" aria-label="Exemplo da tela de confirmação">
+            <span class="rotulo">Exemplo</span>
+            <span>1. Cadastrar Ana Souza na EVO (só se ela ainda não tiver cadastro)</span>
+            <span>2. Inscrever Ana na aula Sáb 09h HYROX, 25/10</span>
+            <span class="botao">Confirmar e enviar à EVO</span>
+          </div>
+          <ul>
+            <li>Deu certo: a reserva vira Confirmado e fica marcada como sincronizada.</li>
+            <li>A EVO recusou: a reserva fica “Pago, aguardando EVO”, com a mensagem de erro da EVO. O atendente tenta de novo ou resolve manualmente.</li>
+            <li>Em modo simulação nada é enviado. O histórico registra o que seria feito.</li>
+          </ul>
+        </div>
+      </li>
+      <li>
+        <div class="passo">
+          <div class="passo-topo"><h3>Cancelamento</h3><span class="chip canc">Cancelado</span></div>
+          <ul>
+            <li>A API da EVO não permite remover a inscrição. Por isso o atendente cancela no nosso sistema, informa o motivo, e o sistema cria a pendência “Remover Ana da aula Sáb 09h na EVO”.</li>
+            <li>Depois de remover na EVO, o atendente clica em <b>Já removi</b>. O sistema confere na EVO; se a pessoa sumiu da lista, a pendência fecha e a vaga é liberada.</li>
+          </ul>
+        </div>
+      </li>
+      <li>
+        <div class="passo">
+          <div class="passo-topo"><h3>Expiração e lista de espera</h3><span class="chip canc">automático</span></div>
+          <ul>
+            <li>A cada 5 minutos o sistema cancela as pré-reservas vencidas.</li>
+            <li>Quando uma vaga é liberada, o 1º da fila vira Pré-reserva com prazo novo.</li>
+            <li>O painel mostra o alerta “Chamar Bruno: vaga liberada”, com a mensagem pronta. Quem envia é o atendente.</li>
+          </ul>
+        </div>
+      </li>
+      <li>
+        <div class="passo">
+          <div class="passo-topo"><h3>Painel de vagas</h3><span class="chip canc">só leitura na EVO</span></div>
+          <ul>
+            <li>Um cartão por aula com: externos confirmados X/15 (contados na EVO), pré-reservas no prazo, quantos estão na fila e pendências.</li>
+            <li>Avisa quando o sistema e a EVO não batem: um externo inscrito direto na EVO, ou um confirmado que não chegou à EVO.</li>
+          </ul>
+        </div>
+      </li>
+      <li class="grava">
+        <div class="passo">
+          <div class="passo-topo"><h3>Presença no dia</h3><span class="chip evo">grava na EVO</span><span class="chip canc">opcional</span></div>
+          <ul>
+            <li>Na recepção, o atendente marca Presente ou Falta. O sistema grava na EVO, também com confirmação e registro no histórico.</li>
+          </ul>
+        </div>
+      </li>
+    </ol>
+    <p class="sub">Em todos os passos o histórico registra quem fez, quando, qual aula, o que foi enviado à EVO e o que ela respondeu.</p>
+  </section>
+
+  <section>
+    <h2>O que a API da EVO permite</h2>
+    <div class="tabela">
+      <table>
+        <thead><tr><th>Ação</th><th>Situação</th><th>Como fazemos</th></tr></thead>
+        <tbody>
+          <tr><td>Inscrever aluno numa aula</td><td><span class="chip conf">Permite</span></td><td>Inscrição como prospect, no passo de confirmação</td></tr>
+          <tr><td>Ver inscritos de uma aula</td><td><span class="chip conf">Permite</span></td><td>Painel de vagas e conferências</td></tr>
+          <tr><td>Separar externos por plano</td><td><span class="chip pre">Não direto</span></td><td>Externo entra como prospect; conta quem é prospect</td></tr>
+          <tr><td>Cancelar inscrição</td><td><span class="chip pre">Não permite</span></td><td>Remoção manual na EVO, com pendência e conferência</td></tr>
+          <tr><td>Cadastrar prospect</td><td><span class="chip conf">Permite</span></td><td>No passo de confirmação, se ainda não houver cadastro</td></tr>
+          <tr><td>Marcar presença</td><td><span class="chip conf">Permite</span></td><td>Passo opcional no dia da aula</td></tr>
+          <tr><td>Lista de espera e pré-reserva</td><td><span class="chip pre">Não existe</span></td><td>Ficam só no nosso sistema</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">Leitura feita na documentação pública da EVO. Ainda precisa ser testada com as credenciais reais, em modo simulação.</p>
+  </section>
+
+  <section>
+    <h2>A confirmar com a gestão</h2>
+    <ul class="decidir">
+      <li><b>Externo como prospect na EVO.</b> É o que permite contar os externos direto na EVO.</li>
+      <li><b>A pré-reserva segura a vaga?</b> Proposta: segura até o prazo, mas o painel mostra como ocupação só os Confirmados.</li>
+      <li><b>Prazo da pré-reserva.</b> Sugestão: 2 horas, ou até 3 horas antes da aula, o que vier primeiro.</li>
+      <li><b>Pacotes.</b> Controlados só no nosso sistema? A validade de 30 dias conta da compra ou do primeiro uso?</li>
+      <li><b>Cancelamento depois de confirmado.</b> Devolve o crédito, reembolsa ou não devolve? Com quanta antecedência?</li>
+    </ul>
+  </section>
+
+  <footer>Proposta de fluxo para o sistema da recepção. Nada foi implementado ainda e nenhuma gravação foi feita na EVO.</footer>
+</main>
